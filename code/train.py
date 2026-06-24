@@ -28,6 +28,8 @@ import os
 import pandas as pd
 # ──────────────────────────────────────────────────────────────────────────────
 
+import argparse
+
 def setup_profiler(log_dir = "/home/andreaberti"):
     dir_path = log_dir + "/profiler_logs"
     if not os.path.exists(dir_path):
@@ -88,9 +90,14 @@ def save_profiler_results(prof, log_dir="/home/andreaberti"):
     df.to_csv(csv_path, index=False)
 
 def main():
-    if CONFIG["set_seed"]:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--seed", type=int, default=None)
+    args = parser.parse_args()
+
+    if args.seed is not None:
+        CONFIG["seed"] = args.seed
         set_seed(CONFIG["seed"])
-    else:
+    elif CONFIG.get("seed") is None:
         CONFIG["seed"] = torch.seed() % (2**32)
         set_seed(CONFIG["seed"])
     

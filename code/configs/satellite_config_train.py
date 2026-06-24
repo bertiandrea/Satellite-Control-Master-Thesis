@@ -18,13 +18,9 @@ EPISODE_LENGTH = 120.0
 N_EPISODES = 8
 
 DR_RANDOMIZATION = False
-CAPS = False
 
 CONFIG = {
-    # --- seed & devices ----------------------------------------------------
-    "set_seed": True,
-    "seed": 42,
-    
+    # --- devices ----------------------------------------------------   
     "profile": PROFILE,
     
     "physics_engine": "physx",

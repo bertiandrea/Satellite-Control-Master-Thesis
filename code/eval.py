@@ -25,20 +25,12 @@ def deep_update(base: dict, override: dict):
         else:
             base[k] = v
 
-def parse_args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--run-name",
-        type=str
-    )
-    parser.add_argument(
-        "--config-name",
-        type=str
-    )
-    return parser.parse_args()
-
 def main():
-    args = parse_args()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--run-name", type=str, required=True)
+    parser.add_argument("--config-name", type=str, required=True)
+    parser.add_argument("--seed", type=int, default=None)
+    args = parser.parse_args()
     
     BASE_DIR = Path(__file__).resolve().parent.parent
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -57,9 +49,10 @@ def main():
     CONFIG.update(training_config)
     # ──────────────────────────────────────────────────────────────────────────
 
-    if CONFIG["set_seed"]:
+    if args.seed is not None:
+        CONFIG["seed"] = args.seed
         set_seed(CONFIG["seed"])
-    else:
+    elif CONFIG.get("seed") is None:
         CONFIG["seed"] = torch.seed() % (2**32)
         set_seed(CONFIG["seed"])
 

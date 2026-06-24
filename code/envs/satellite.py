@@ -83,7 +83,9 @@ class Satellite(DRVecTask):
         ########################################
 
         self.prev_angvel = torch.zeros((self.num_envs, 3), dtype=torch.float, device=self.device)
-        self.delta_actions = torch.zeros((self.num_envs, 3), dtype=torch.float, device=self.device)
+        self.torques = torch.zeros((self.num_envs, 3), dtype=torch.float, device=self.device)
+        self.prev_torques = torch.zeros((self.num_envs, 3), dtype=torch.float, device=self.device)
+        self.delta_torques = torch.zeros((self.num_envs, 3), dtype=torch.float, device=self.device)
 
         self.torque_tensor = torch.zeros((self.num_bodies * self.num_envs, 3), device=self.device)
         self.force_tensor = torch.zeros((self.num_bodies * self.num_envs, 3), device=self.device)
@@ -258,10 +260,10 @@ class Satellite(DRVecTask):
         self._log_scalar("Angular Error/q_diff_mean_rad", q_diff_rad.mean().item())
         self._log_scalar("Angular Error/q_diff_mean_deg", q_diff_rad.mean().item() * 180.0 / torch.pi)
 
-        self._log_scalar("Energy/mean", (self.actions ** 2).sum(dim=-1).mean().item())
-        self._log_scalar("Energy/delta_mean", (self.delta_actions ** 2).sum(dim=-1).mean().item())
+        self._log_scalar("Energy/mean", (self.torques ** 2).sum(dim=-1).mean().item())
+        self._log_scalar("Energy/delta_mean", ((self.delta_torques) ** 2).sum(dim=-1).mean().item())
 
-        self._log_scalar("Torque/max_mean", self.actions.abs().max(dim=1).values.mean().item())
+        self._log_scalar("Torque/max_mean", self.torques.abs().max(dim=1).values.mean().item())
 
         self._log_scalar('Goal/goal', goal.item())
 
@@ -273,8 +275,8 @@ class Satellite(DRVecTask):
                 "ang_diff": quat_diff_rad(self.satellite_quats, self.goal_quat).detach().cpu() * (180.0 / math.pi),
                 "angvel": self.satellite_angvels.detach().cpu(),
                 "angacc": self.satellite_angacc.detach().cpu(),
-                "actions": self.actions.detach().cpu(),
-                "delta_actions": self.delta_actions.detach().cpu(),
+                "torques": self.torques.detach().cpu(),
+                "delta_torques": self.delta_torques.detach().cpu(),
             })
 
         if self.log_buffer and (
@@ -306,8 +308,10 @@ class Satellite(DRVecTask):
         #######################################
 
         self.prev_angvel[ids] = torch.zeros((len(ids), 3), dtype=torch.float, device=self.device)
-        self.delta_actions[ids] = torch.zeros((len(ids), 3), dtype=torch.float, device=self.device)
-
+        self.torques[ids] = torch.zeros((len(ids), 3), dtype=torch.float, device=self.device)
+        self.prev_torques[ids] = torch.zeros((len(ids), 3), dtype=torch.float, device=self.device)
+        self.delta_torques[ids] = torch.zeros((len(ids), 3), dtype=torch.float, device=self.device)
+        
         self.goal_quat[ids] = sample_random_quaternion_batch(self.device, len(ids))
 
         self.progress_buf[ids] = 0
@@ -329,21 +333,23 @@ class Satellite(DRVecTask):
             self.reset_idx(self.reset_ids)
     
     def apply_torque(self) -> None:
-        self.actions = torch.mul(self.actions, self.torque_scale)
+        self.torques = torch.mul(self.actions, self.torque_scale)
+        self.delta_torques = torch.sub(self.torques, self.prev_torques)
+        self.prev_torques = self.torques.detach().clone()
 
-        self.actions[self.reset_ids] = torch.zeros((len(self.reset_ids), 3), dtype=torch.float, device=self.device)
+        self.torques[self.reset_ids] = torch.zeros((len(self.reset_ids), 3), dtype=torch.float, device=self.device)
         
         #########################################
-        assert not torch.isnan(self.actions).any(), f"actions has NaN: {self.actions, self.states_buf}"
-        assert not torch.isinf(self.actions).any(), f"actions has Inf: {self.actions, self.states_buf}"
+        assert not torch.isnan(self.torques).any(), f"torques has NaN: {self.torques, self.states_buf}"
+        assert not torch.isinf(self.torques).any(), f"torques has Inf: {self.torques, self.states_buf}"
         #########################################
 
         #########################################
         if self.is_eval and self.explosion and self.control_steps == self.explosion_time:
             self.impulse = self.explosion_impulse()
-            self.torque_tensor[self.root_indices] = torch.add(self.actions, self.impulse)
+            self.torque_tensor[self.root_indices] = torch.add(self.torques, self.impulse)
         else:
-            self.torque_tensor[self.root_indices] = self.actions
+            self.torque_tensor[self.root_indices] = self.torques
         #########################################
 
         ################## SIM ##################
@@ -371,22 +377,22 @@ class Satellite(DRVecTask):
         self.prev_angvel = self.satellite_angvels.detach().clone()
         self.obs_buf = torch.cat(
             (self.satellite_quats, quat_diff(self.satellite_quats, self.goal_quat), quat_diff_rad(self.satellite_quats, self.goal_quat).unsqueeze(-1), 
-                self.satellite_angacc, self.actions), dim=-1)
+                self.satellite_angacc, self.torques), dim=-1)
         self.states_buf = torch.cat(
             (self.obs_buf, self.satellite_angvels), dim=-1)
         ########################################
 
         ########################################
-        assert not torch.isnan(self.obs_buf).any(), f"self.obs_buf has NaN: {self.actions, self.obs_buf}"
-        assert not torch.isinf(self.obs_buf).any(), f"self.obs_buf has Inf: {self.actions, self.obs_buf}"
-        assert not torch.isnan(self.states_buf).any(), f"self.states_buf has NaN: {self.actions, self.states_buf}"
-        assert not torch.isinf(self.states_buf).any(), f"self.states_buf has Inf: {self.actions, self.states_buf}"
+        assert not torch.isnan(self.obs_buf).any(), f"self.obs_buf has NaN: {self.torques, self.obs_buf}"
+        assert not torch.isinf(self.obs_buf).any(), f"self.obs_buf has Inf: {self.torques, self.obs_buf}"
+        assert not torch.isnan(self.states_buf).any(), f"self.states_buf has NaN: {self.torques, self.states_buf}"
+        assert not torch.isinf(self.states_buf).any(), f"self.states_buf has Inf: {self.torques, self.states_buf}"
         ########################################
 
     def compute_reward(self) -> None:
         self.rew_buf = self.reward_fn.compute(
             self.satellite_quats, self.satellite_angvels, self.satellite_angacc,
-            self.goal_quat, self.actions
+            self.goal_quat, self.torques
         )
 
     def check_termination(self) -> None:
@@ -396,7 +402,6 @@ class Satellite(DRVecTask):
         self.reset_buf = timeout
 
     def pre_physics_step(self, actions):
-        if hasattr(self, 'actions'): self.delta_actions = actions.to(self.device) - self.actions
         self.actions = actions.to(self.device)
 
         self.termination()

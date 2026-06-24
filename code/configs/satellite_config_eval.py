@@ -13,7 +13,6 @@ HEADLESS = True
 DEBUG_ARROWS = False
 LOG_TRAJECTORIES = True
 
-SEED = 420
 NUM_ENVS = 4096
 EPISODE_LENGTH = 600.0
 
@@ -21,10 +20,7 @@ DR_RANDOMIZATION = False
 EXPLOSION = False
 
 CONFIG = {
-    # --- seed & devices ----------------------------------------------------
-    "set_seed": True,
-    "seed": SEED,
-	
+    # --- devices ----------------------------------------------------
     "profile": False,
 	
     "headless": HEADLESS,
