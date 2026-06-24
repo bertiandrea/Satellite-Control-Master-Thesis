@@ -1,0 +1,146 @@
+{
+    "profile": false,
+    "physics_engine": "physx",
+    "rl_device": "cuda:0",
+    "sim_device": "cuda:0",
+    "graphics_device_id": 0,
+    "headless": true,
+    "env": {
+        "numEnvs": 4096,
+        "numObservations": 15,
+        "numStates": 18,
+        "numActions": 3,
+        "clipActions": 1.0,
+        "clipObservations": 10.0,
+        "max_episode_length": 120.0,
+        "env_spacing": 3.0,
+        "torque_scale": 100.0,
+        "debug_arrows": false,
+        "debug_prints": false,
+        "asset": {
+            "asset_root": "/home/andreaberti/Satellite-Control-Master-Thesis/code",
+            "asset_file_name": "satellite.urdf",
+            "asset_name": "satellite"
+        }
+    },
+    "sim": {
+        "dt": 0.016666666666666666,
+        "gravity": [
+            0.0,
+            0.0,
+            0.0
+        ],
+        "up_axis": "z",
+        "use_gpu_pipeline": true,
+        "substeps": 2,
+        "physx": {
+            "use_gpu": true
+        }
+    },
+    "rl": {
+        "PPO": {
+            "num_envs": 4096,
+            "rollouts": 16,
+            "learning_epochs": 8,
+            "mini_batches": 4,
+            "learning_rate_scheduler": "<class 'skrl.resources.schedulers.torch.kl_adaptive.KLAdaptiveLR'>",
+            "learning_rate_scheduler_kwargs": {
+                "kl_threshold": 0.016
+            },
+            "state_preprocessor": "<class 'skrl.resources.preprocessors.torch.running_standard_scaler.RunningStandardScaler'>",
+            "value_preprocessor": "<class 'skrl.resources.preprocessors.torch.running_standard_scaler.RunningStandardScaler'>",
+            "rewards_shaper": "<function <lambda> at 0x7fadf0644550>",
+            "discount_factor": 0.99,
+            "learning_rate": 0.001,
+            "grad_norm_clip": 1.0,
+            "ratio_clip": 0.2,
+            "value_clip": 0.2,
+            "clip_predicted_values": true,
+            "entropy_loss_scale": 0.0,
+            "value_loss_scale": 2.0,
+            "kl_threshold": 0,
+            "lambda": 0.95,
+            "random_timesteps": 0,
+            "learning_starts": 0,
+            "experiment": {
+                "write_interval": "auto",
+                "checkpoint_interval": "auto",
+                "directory": "./train/runs",
+                "wandb": false,
+                "experiment_name": "run_20260622_222441"
+            }
+        },
+        "trainer": {
+            "timesteps": 57600,
+            "disable_progressbar": false,
+            "headless": true
+        },
+        "memory": {
+            "rollouts": 16
+        }
+    },
+    "reward": {
+        "reward_function": "ExponentialReward",
+        "ExponentialReward": {
+            "lambda_u": 5e-05,
+            "goal_deg": 0.005,
+            "bonus": 9.0
+        }
+    },
+    "log_status": {
+        "log": true,
+        "log_interval": 1,
+        "log_dir": "./train/status/status_20260622_222441"
+    },
+    "dr_randomization": {
+        "enabled": false,
+        "dr_params": {
+            "actor_params": {
+                "satellite": {
+                    "color": true,
+                    "rigid_body_properties": {
+                        "inertia": {
+                            "enabled": false,
+                            "distribution": "gaussian",
+                            "operation": "scaling",
+                            "range": [
+                                1.0,
+                                0.0
+                            ]
+                        }
+                    }
+                }
+            },
+            "observations": {
+                "enabled": false,
+                "distribution": "gaussian",
+                "operation": "scaling",
+                "range": [
+                    1.0,
+                    0.0
+                ],
+                "quaternion_noise": 0.0
+            },
+            "states": {
+                "enabled": false,
+                "distribution": "gaussian",
+                "operation": "scaling",
+                "range": [
+                    1.0,
+                    0.0
+                ],
+                "quaternion_noise": 0.0
+            },
+            "actions": {
+                "enabled": false,
+                "distribution": "gaussian",
+                "operation": "scaling",
+                "range": [
+                    1.0,
+                    0.0
+                ]
+            }
+        }
+    },
+    "seed": 168
+}
