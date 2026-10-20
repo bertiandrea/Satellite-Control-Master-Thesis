@@ -50,7 +50,7 @@ def normalize_config(d: dict) -> dict:
 
 def main():
     ap = argparse.ArgumentParser(description="Verifica che i config di un esperimento siano identici.")
-    ap.add_argument("--root", default="~/Satellite-Control-Thesis-Baseline/eval/configs",
+    ap.add_argument("--root", default="~/Satellite-Control-Master-Thesis/eval/configs",
                     help="Directory radice dei configs (default: %(default)s)")
     args = ap.parse_args()
 

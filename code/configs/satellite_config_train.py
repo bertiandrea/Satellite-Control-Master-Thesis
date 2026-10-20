@@ -87,7 +87,7 @@ CONFIG = {
             "value_clip" : 0.2, #Clipping range for value function targets to stabilize value updates.
             "clip_predicted_values" : True, #If enabled, clips the new value predictions to lie within the range defined by value_clip around the old predictions.
             "entropy_loss_scale" : 0.00, #Coefficient multiplying the entropy bonus; encourages exploration when > 0.
-            "value_loss_scale" : 2.0, #Coefficient weighting the value function loss in the total loss.
+            "value_loss_scale" : 1.0, #Coefficient weighting the value function loss in the total loss.
             "kl_threshold" : 0, #Optional early-stop threshold on KL divergence between old and new policies (0 disables).
             "lambda" : 0.95, #(λ) GAE parameter for bias–variance trade-off in advantage estimation.
             
@@ -126,7 +126,7 @@ CONFIG = {
     # --- log_status -----------------------------------------------------------
     "log_status": {
         "log": True,
-        "log_interval": 1,  # steps
+        "log_interval": 100,  # steps
         "log_dir": "./train/status",
     },
 

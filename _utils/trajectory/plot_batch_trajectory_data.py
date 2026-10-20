@@ -68,71 +68,18 @@ def print_results_table(grouped, results):
 
 
 # ==============================================================================
-# LOGICA SPECIFICA DELLO SCRIPT 2 (CARICAMENTO LAZY/SEQUENZIALE)
+# LOGICA SPECIFICA DELLO SCRIPT 1 (CARICAMENTO GLOBALE)
 # ==============================================================================
-def load_metric_for_all_groups(metric: str, grouped):
-    list_of_data = []
-    for gid, files in grouped.items():
-        print(f"--> Loading Group: {gid} ({len(files)} files) [metric={metric}]")
-        try:
-            list_steps = []
-            list_metric = []
-
-            for f in files:
-                data = torch.load(f, map_location="cpu", weights_only=True)
-
-                d_steps = torch.tensor([d["step"] for d in data]) / HZ
-
-                if metric == "quat":
-                    d_val = torch.stack([d["quat"] for d in data])  
-                elif metric == "angdiff":
-                    d_val = torch.stack([d["ang_diff"] for d in data]).unsqueeze(-1)  
-                elif metric == "angvel":
-                    d_val = torch.stack([d["angvel"] for d in data])  
-                elif metric == "angacc":
-                    d_val = torch.stack([d["angacc"] for d in data])  
-                else:
-                    d_actions = torch.stack([d["actions"] for d in data])  
-
-                    if metric == "actions":
-                        d_val = d_actions
-                    elif metric == "energy":
-                        d_val = (d_actions ** 2).sum(dim=-1, keepdim=True)  
-                    elif metric == "denergy":
-                        d_energy = (d_actions ** 2).sum(dim=-1, keepdim=True)
-                        d_val = torch.zeros_like(d_energy)
-                        d_val[1:] = ((d_actions[1:] - d_actions[:-1]) ** 2).sum(dim=-1, keepdim=True)
-                    elif metric == "maxaction":
-                        d_val = d_actions.abs().max(dim=-1, keepdim=True)[0]
-                    else:
-                        raise ValueError(f"Unknown metric: {metric}")
-
-                list_steps.append(d_steps)
-                list_metric.append(d_val)
-
-            list_of_data.append((gid, list_steps[0], torch.cat(list_metric, dim=1)))
-            del list_steps, list_metric
-            gc.collect()
-        except Exception as e:
-            print(f"   [!] Error loading {gid} metric={metric}: {e}")
-
-    return list_of_data
-
-def update_summary(metric_key: str, data_list, method, results):
-    for gid, steps, tensor in data_list:  
-        print(f"Updating summary for {gid} metric={metric_key}")
-        if method == "median":
-            curve = tensor[:, :, 0].median(dim=1).values.numpy()
-        else:
-            curve = tensor[:, :, 0].mean(dim=1).numpy()
-        results[gid][metric_key] = np.mean(curve[-max(1, int(len(curve) * 0.05)):]) if len(curve) > 0 else None
-
 def plot_component_across_files(out_dir, title, list_of_data, labels, method, non_negative=False, log_scale=False, log_threshold=None):
     C = list_of_data[0][2].shape[2]
 
     list_of_data.sort(key=lambda x: nat_key(x[0]))
     
-    unique_groups = get_unique_groups({gid: None for gid, *_ in list_of_data})
+    unique_groups = sorted(
+        set(((gid.split('/')[0][:-6] if gid.split('/')[0].endswith("_noise") else gid.split('/')[0])
+             for gid, *_ in list_of_data)),
+        key=nat_key
+    )
     cmap = plt.get_cmap("gist_rainbow", len(unique_groups))
 
     for scale in (["linear", "log"] if log_scale else ["linear"]):
@@ -141,26 +88,29 @@ def plot_component_across_files(out_dir, title, list_of_data, labels, method, no
             if i >= C: break
             plt.subplot(C, 1, i + 1)
 
-            for run_name, steps, data in list_of_data:
+            for run_name, steps, mean_mat, std_mat in list_of_data:
                 if method == "median":
-                    mean = data[:, :, i].median(dim=1).values.numpy()
-                    std = data[:, :, i].std(dim=1).numpy()
+                    mean = np.median(mean_mat[:, :, i], axis=1)
+                    std  = np.median(std_mat[:, :, i], axis=1)
                 else:
-                    mean = data[:, :, i].mean(dim=1).numpy()
-                    std = data[:, :, i].std(dim=1).numpy()
-                
+                    mean = np.mean(mean_mat[:, :, i], axis=1)
+                    std  = np.mean(std_mat[:, :, i], axis=1)
+
                 step_np = steps.numpy()
 
                 lower, upper = mean - std, mean + std
                 if non_negative:
                     lower = np.maximum(lower, 0.0)
 
-                base_name, eval_name = run_name.rsplit('/', 1)
-                group_idx = unique_groups.index(base_name)
+                run_name_split = run_name.split('/')[0]
+                group_name = (run_name_split[:-6] if run_name_split.endswith("_noise") else run_name_split)
+                print(f"Plotting {run_name} in group {group_name}")
+
+                group_idx = unique_groups.index(group_name)
                 base_color = cmap(group_idx)
-                alpha_val = 1.0 if eval_name == "nominal" else 0.5
+                alpha_val = 1.0 if not run_name.endswith("_noise") else 0.5
                 color = (base_color[0], base_color[1], base_color[2], alpha_val)
-                
+
                 last_val = np.mean(mean[-max(1, int(len(mean) * 0.05)):]) if len(mean) > 0 else 0.0
                 plt.plot(step_np, mean, label=f"{run_name} ({last_val:.2f})", color=color, linewidth=1.5)
                 plt.fill_between(step_np, lower, upper, color=color, alpha=0.15)
@@ -178,51 +128,86 @@ def plot_component_across_files(out_dir, title, list_of_data, labels, method, no
         plt.close()
 
 def process_and_plot_data(grouped, out, method):
-    results = defaultdict(dict)  # results[gid][col] = float
+    all_results = {} 
+    for gid, files in grouped.items():
+        print(f"--> Loading Group: {gid} ({len(files)} files)")
+        try:
+            list_quat_m, list_quat_s = [], []
+            list_angdiff_m, list_angdiff_s = [], []
+            list_angvel_m, list_angvel_s = [], []
+            list_angacc_m, list_angacc_s = [], []
+            list_actions_m, list_actions_s = [], []
+            list_energy_m, list_energy_s = [], []
+            list_denergy_m, list_denergy_s = [], []
+            list_maxaction_m, list_maxaction_s = [], []
 
-    data = load_metric_for_all_groups("quat", grouped)
-    plot_component_across_files(out, "Quaternion", data, ["x", "y", "z", "w"], method=method)
-    del data
-    gc.collect()
+            list_steps = []
+            for f in files:
+                data = torch.load(f, map_location="cpu", weights_only=True)
 
-    data = load_metric_for_all_groups("angdiff", grouped)
-    update_summary("phi_mean", data, method, results)
-    plot_component_across_files(out, "Angular Difference", data, ["angle"], method=method, non_negative=True, log_scale=True, log_threshold=1e0)
-    del data
-    gc.collect()
+                d_steps   = torch.tensor([d["step"] for d in data]) / HZ
+                d_quat    = torch.stack([d["quat"] for d in data])
+                d_angdiff = torch.stack([d["ang_diff"] for d in data]).unsqueeze(-1)
+                d_angvel  = torch.stack([d["angvel"] for d in data])
+                d_angacc  = torch.stack([d["angacc"] for d in data])
+                d_actions = torch.stack([d["torques"] for d in data])
+                d_delta_actions = torch.stack([d["delta_torques"] for d in data])
 
-    data = load_metric_for_all_groups("angvel", grouped)
-    plot_component_across_files(out, "Angular Velocity", data, ["x", "y", "z"], method=method)
-    del data
-    gc.collect()
+                d_energy = (d_actions ** 2).sum(dim=-1, keepdim=True)
+                d_denergy = (d_delta_actions ** 2).sum(dim=-1, keepdim=True)
+                d_maxaction = d_actions.abs().max(dim=-1, keepdim=True)[0]
+                
+                def ms(x):
+                    return x.mean(dim=1), x.std(dim=1)
 
-    data = load_metric_for_all_groups("angacc", grouped)
-    plot_component_across_files(out, "Angular Acceleration", data, ["x", "y", "z"], method=method)
-    del data
-    gc.collect()
+                qm, qs = ms(d_quat);        list_quat_m.append(qm);        list_quat_s.append(qs)
+                am, as_ = ms(d_angdiff);    list_angdiff_m.append(am);     list_angdiff_s.append(as_)
+                vm, vs = ms(d_angvel);      list_angvel_m.append(vm);      list_angvel_s.append(vs)
+                acm, acs = ms(d_angacc);    list_angacc_m.append(acm);     list_angacc_s.append(acs)
+                actm, acts = ms(d_actions); list_actions_m.append(actm);   list_actions_s.append(acts)
+                em, es = ms(d_energy);      list_energy_m.append(em);      list_energy_s.append(es)
+                dem, des = ms(d_denergy);   list_denergy_m.append(dem);    list_denergy_s.append(des)
+                mm, ms_ = ms(d_maxaction);  list_maxaction_m.append(mm);   list_maxaction_s.append(ms_)
 
-    data = load_metric_for_all_groups("actions", grouped)
-    plot_component_across_files(out, "Actions", data, ["x", "y", "z"], method=method, log_scale=True, log_threshold=1e0)
-    del data
-    gc.collect()
+                list_steps.append(d_steps)
 
-    data = load_metric_for_all_groups("energy", grouped)
-    update_summary("energy_mean", data, method, results)
-    plot_component_across_files(out, "Action Energy ||a_t||^2", data, ["energy"], method=method, non_negative=True, log_scale=True, log_threshold=1e2)
-    del data
-    gc.collect()
+            def stack_runs(lst):
+                return torch.stack(lst, dim=1).numpy()
 
-    data = load_metric_for_all_groups("denergy", grouped)
-    update_summary("du_energy_mean", data, method, results)
-    plot_component_across_files(out, "Action Delta Energy ||a_t-a_{t-1}||^2", data, ["delta_energy"], method=method, non_negative=True, log_scale=True, log_threshold=1e2)
-    del data
-    gc.collect()
+            all_results[gid] = {
+                "steps": list_steps[0], 
+                "quat":            (stack_runs(list_quat_m),      stack_runs(list_quat_s)),
+                "phi_mean":        (stack_runs(list_angdiff_m),   stack_runs(list_angdiff_s)),
+                "angvel":          (stack_runs(list_angvel_m),    stack_runs(list_angvel_s)),
+                "angacc":          (stack_runs(list_angacc_m),    stack_runs(list_angacc_s)),
+                "actions":         (stack_runs(list_actions_m),   stack_runs(list_actions_s)),
+                "energy_mean":     (stack_runs(list_energy_m),    stack_runs(list_energy_s)),
+                "du_energy_mean":  (stack_runs(list_denergy_m),   stack_runs(list_denergy_s)),
+                "max_torque_mean": (stack_runs(list_maxaction_m), stack_runs(list_maxaction_s)),
+            }
+        except Exception as e:
+            print(f"   [!] Error loading {gid}: {e}")
 
-    data = load_metric_for_all_groups("maxaction", grouped)
-    update_summary("max_torque_mean", data, method, results)
-    plot_component_across_files(out, "Max Action", data, ["max_action"], method=method, non_negative=True, log_scale=True, log_threshold=1e1)
-    del data
-    gc.collect()
+    def extract(key):
+        return [(gid, d["steps"], d[key][0], d[key][1]) for gid, d in all_results.items()]
+    
+    plot_component_across_files(out, "Quaternion", extract("quat"), ["x", "y", "z", "w"], method)
+    plot_component_across_files(out, "Angular Difference", extract("phi_mean"), ["angle"], method, non_negative=True, log_scale=True, log_threshold=1e0)
+    plot_component_across_files(out, "Angular Velocity", extract("angvel"), ["x", "y", "z"], method)
+    plot_component_across_files(out, "Angular Acceleration", extract("angacc"), ["x", "y", "z"], method)
+    plot_component_across_files(out, "Actions", extract("actions"), ["x", "y", "z"], method, log_scale=True, log_threshold=1e0)
+    plot_component_across_files(out, "Action Energy ||a_t||^2", extract("energy_mean"), ["energy"], method, non_negative=True, log_scale=True, log_threshold=1e2)
+    plot_component_across_files(out, "Action Delta Energy ||a_t-a_{t-1}||^2", extract("du_energy_mean"), ["delta_energy"], method, non_negative=True, log_scale=True, log_threshold=1e2)
+    plot_component_across_files(out, "Max Action", extract("max_torque_mean"), ["max_action"], method, non_negative=True, log_scale=True, log_threshold=1e1)
+
+    # Compila il dizionario dei risultati per la tabella
+    results = defaultdict(dict)
+    for gid, d in all_results.items():
+        for tag in TAGS:
+            if tag in d:
+                m = d[tag][0][:, :, 0]
+                curve = np.median(m, axis=1) if method == "median" else np.mean(m, axis=1)
+                results[gid][tag] = np.mean(curve[-max(1, int(len(curve) * 0.05)):])
 
     return results
 

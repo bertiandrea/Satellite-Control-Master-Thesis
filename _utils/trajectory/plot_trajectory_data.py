@@ -13,9 +13,8 @@ N_ENV_PLOT = 8
 HZ = 60
 MAX_TIME = 200.0
 SMOOTH_WINDOW = 20
-LOG_PATH = "/home/andreaberti/Satellite-Control-Thesis-Baseline/eval/trajectories/randomization/0_05/nominal/run_20260417_164304/trajectories_20260615_130115.pt"
-#LOG_PATH = "/home/andreaberti/Satellite-Control-Thesis-Baseline/eval/trajectories/trajectories_20260611_091501.pt"
-CACHE_DIR = "/home/andreaberti/Satellite-Control-Thesis-Baseline/eval/trajectories/_cache_mmap"
+LOG_PATH = "/home/andreaberti/Satellite-Control-Master-Thesis/eval/trajectories/randomization/0_05/nominal/XXXX.pt"
+CACHE_DIR = "/home/andreaberti/Satellite-Control-Master-Thesis/eval/trajectories/_cache_mmap"
 
 def build_cache_with_low_ram():
     print("Inizio conversione del file .pt in formato binario (Memory-Mapped)...")

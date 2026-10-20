@@ -73,7 +73,7 @@ def main():
     ap.add_argument("--mode", choices=["audit", "move"], required=True,
                     help="audit: only checks, move: organize into run_<train_ts>")
 
-    ap.add_argument("--root", default="~/Satellite-Control-Thesis-Baseline/eval",
+    ap.add_argument("--root", default="~/Satellite-Control-Master-Thesis/eval",
                     help="Evaluating root (default: %(default)s)")
     ap.add_argument("--config-dir", default="configs",
                     help="relative to root (default: %(default)s)")
