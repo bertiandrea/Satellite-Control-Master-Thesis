@@ -12,7 +12,7 @@ from typing import Optional
 class RewardFunction(ABC):
 
     @abstractmethod
-    def compute(self, quats: torch.Tensor, ang_vels: torch.Tensor, ang_accs: torch.Tensor, goal_quat: torch.Tensor, actions: torch.Tensor) -> torch.Tensor:
+    def compute(self, quats: torch.Tensor, ang_vels: torch.Tensor, ang_accs: torch.Tensor, goal_quat: torch.Tensor, torques: torch.Tensor) -> torch.Tensor:
         pass
 
     @staticmethod
