@@ -28,7 +28,10 @@ class ExponentialReward(RewardFunction):
         self.bonus = bonus
         print(f"Initialized ExponentialReward with lambda_u={lambda_u}, goal_deg={goal_deg}, bonus={bonus}")
 
-    def compute(self, quats, ang_vels, ang_accs, goal_quat, actions):
+    def reset(self, ids, quats, goal_quat):
+        self.prev_phi[ids] = quat_diff_rad(quats[ids], goal_quat[ids]).detach()
+
+    def compute(self, quats, ang_vels, ang_accs, goal_quat, torques):
         phi = quat_diff_rad(quats, goal_quat)
         r_q = torch.exp(torch.div(torch.neg(phi), 0.14 * 2 * math.pi))
 
@@ -42,7 +45,7 @@ class ExponentialReward(RewardFunction):
 
         self.prev_phi = phi.detach().clone()
 
-        u_sq = torch.sum(torch.square(actions), dim=-1)
+        u_sq = torch.sum(torch.square(torques), dim=-1)
         r_effort = torch.mul(self.lambda_u, u_sq)
 
         bonus = torch.mul(

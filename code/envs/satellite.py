@@ -98,7 +98,9 @@ class Satellite(DRVecTask):
 
         ###################################################    
         if self.is_eval and self.log_trajectories:
-                os.makedirs(os.path.dirname(self.log_trajectories_file), exist_ok=True)
+                log_dir = os.path.dirname(self.log_trajectories_file)
+                if log_dir:
+                    os.makedirs(log_dir, exist_ok=True)
                 self.log_buffer = []
         ###################################################
 
@@ -204,19 +206,32 @@ class Satellite(DRVecTask):
     ################################################################################################################################
     def get_discretized_orientations(self, base_quat: torch.Tensor) -> torch.Tensor:
         if self.num_envs == 1:
-            return quat_conjugate(base_quat)
+            return quat_mul(base_quat, torch.tensor([[1.0, 0.0, 0.0, 0.0]], dtype=torch.float, device=self.device))
 
         pts = int(round(self.num_envs ** (1/3)))
         if pts ** 3 != self.num_envs:
             raise ValueError("num_envs must be a perfect cube for discretized orientations.")
 
-        angles = torch.linspace(0, 2 * torch.pi, pts, device=self.device)
-        angles_i, angles_j, angles_k = torch.meshgrid(angles, angles, angles, indexing='ij')
-        orientations = quat_from_euler_xyz(angles_i.flatten(), angles_j.flatten(), angles_k.flatten())
+        i = torch.arange(pts**2, device=self.device, dtype=torch.float)
+        x = torch.linspace(1, -1, pts**2, device=self.device)
+        r = torch.sqrt(torch.clamp(1 - x**2, min=0))
+        theta = math.pi * (1 + math.sqrt(5)) * i
+
+        yaw = torch.atan2(r * torch.cos(theta), x)
+        pitch = torch.asin(-r * torch.sin(theta))
+        roll = torch.arange(pts, device=self.device, dtype=torch.float) * (2 * math.pi / pts)
+
+        orientations = quat_from_euler_xyz(
+            roll.repeat(pts**2),
+            pitch.repeat_interleave(pts),
+            yaw.repeat_interleave(pts)
+        )
+
         orientations = quat_mul(base_quat.repeat(self.num_envs, 1), orientations)
         orientations = orientations / torch.norm(orientations, dim=1, keepdim=True)
+
         return orientations
-   
+    
     ################################################################################################################################
 
     def explosion_impulse(self) -> torch.Tensor:
@@ -263,6 +278,10 @@ class Satellite(DRVecTask):
         self._log_scalar("Energy/mean", (self.torques ** 2).sum(dim=-1).mean().item())
         self._log_scalar("Energy/delta_mean", ((self.delta_torques) ** 2).sum(dim=-1).mean().item())
 
+        self._log_scalar("Torque/torque_X", self.torques[0, 0].item())
+        self._log_scalar("Torque/torque_Y", self.torques[0, 1].item())
+        self._log_scalar("Torque/torque_Z", self.torques[0, 2].item())
+
         self._log_scalar("Torque/max_mean", self.torques.abs().max(dim=1).values.mean().item())
 
         self._log_scalar('Goal/goal', goal.item())
@@ -307,12 +326,12 @@ class Satellite(DRVecTask):
         )
         #######################################
 
-        self.prev_angvel[ids] = torch.zeros((len(ids), 3), dtype=torch.float, device=self.device)
-        self.torques[ids] = torch.zeros((len(ids), 3), dtype=torch.float, device=self.device)
-        self.prev_torques[ids] = torch.zeros((len(ids), 3), dtype=torch.float, device=self.device)
-        self.delta_torques[ids] = torch.zeros((len(ids), 3), dtype=torch.float, device=self.device)
-        
+        self.prev_angvel[ids] = 0.0
+        self.prev_torques[ids] = 0.0
+
         self.goal_quat[ids] = sample_random_quaternion_batch(self.device, len(ids))
+
+        self.reward_fn.reset(ids, self.satellite_quats, self.goal_quat)
 
         self.progress_buf[ids] = 0
         self.reset_buf[ids] = False
@@ -334,10 +353,9 @@ class Satellite(DRVecTask):
     
     def apply_torque(self) -> None:
         self.torques = torch.mul(self.actions, self.torque_scale)
+        self.torques[self.reset_ids] = 0.0
         self.delta_torques = torch.sub(self.torques, self.prev_torques)
         self.prev_torques = self.torques.detach().clone()
-
-        self.torques[self.reset_ids] = torch.zeros((len(self.reset_ids), 3), dtype=torch.float, device=self.device)
         
         #########################################
         assert not torch.isnan(self.torques).any(), f"torques has NaN: {self.torques, self.states_buf}"
