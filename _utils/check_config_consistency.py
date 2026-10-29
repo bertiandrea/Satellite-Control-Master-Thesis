@@ -33,8 +33,8 @@ def normalize_config(d: dict) -> dict:
 
         # 2. Ignora object_id (es. <function <lambda> at 0x7f98633791f0>)
         if "rewards_shaper" in ppo and "at 0x" in ppo["rewards_shaper"]:
-                    ppo["rewards_shaper"] = "IGNORED_OBJECT_ID"
-        
+            ppo["rewards_shaper"] = "IGNORED_OBJECT_ID"
+
         # 3. Ignora timestamp negli esperimenti
         if "experiment" in ppo and "experiment_name" in ppo["experiment"]:
             ppo["experiment"]["experiment_name"] = "IGNORED_TIMESTAMP"
@@ -55,7 +55,7 @@ def main():
     args = ap.parse_args()
 
     cfg_root = Path(args.root).expanduser().resolve()
-    
+
     if not cfg_root.is_dir():
         print(f"[ERRORE] Directory non trovata: {cfg_root}")
         return
@@ -70,12 +70,18 @@ def main():
 
     errors_found = False
 
+    # Intestazione della tabella
+    header = (
+        f"{'RUN TRAIN':<15} | {'GRUPPO':<60} | {'FILE':>4} | "
+        f"{'DR':<5} | {'INERTIA':<7} | {'STD I':>8} | "
+        f"{'OBS':<7} | {'STD OBS':>8} | {'QUAT OBS':>10} | "
+        f"{'STATES':<7} | {'STD ST':>8} | {'QUAT ST':>10} | "
+        f"{'ACTIONS':<7} | {'STD ACT':>8} | {'COLOR':<5} | {'CONFIG':<47}"
+    )
+    print(header)
+    print("-" * len(header))
+
     for (branch, train_ts), files in sorted(groups.items()):
-        if len(files) < 2:
-            continue
-            
-        print(f"Verifica gruppo: Run {train_ts} -> [{branch}] ({len(files)} file)")
-        
         ref_file = sorted(files)[0]
         try:
             with open(ref_file, "r") as f:
@@ -84,6 +90,37 @@ def main():
             print(f"  [!] Errore di lettura config di riferimento {ref_file.name}: {e}")
             errors_found = True
             continue
+
+        # Stampa i parametri di valutazione del config di riferimento
+        dr = ref_data.get("dr_randomization", {})
+        dr_params = dr.get("dr_params", {})
+        satellite = dr_params.get("actor_params", {}).get("satellite", {})
+        inertia = satellite.get("rigid_body_properties", {}).get("inertia", {})
+        inertia_std = inertia.get("range", ["N/D", "N/D"])[1]
+
+        print(
+            f"{train_ts:<15} | {branch:<60} | {len(files):>4} | "
+            f"{dr.get('enabled', 'N/D')!s:<5} | "
+            f"{inertia.get('enabled', 'N/D')!s:<7} | {inertia_std!s:>8} | ",
+            end="",
+        )
+
+        for key in ("observations", "states", "actions"):
+            noise = dr_params.get(key, {})
+            noise_std = noise.get("range", ["N/D", "N/D"])[1]
+
+            print(
+                f"{noise.get('enabled', 'N/D')!s:<7} | {noise_std!s:>8} | ",
+                end="",
+            )
+
+            if key != "actions":
+                print(
+                    f"{noise.get('quaternion_noise', 'N/D')!s:>10} | ",
+                    end="",
+                )
+
+        print(f"{satellite.get('color', 'N/D')!s:<5} | {ref_file.name:<47}")
 
         for test_file in sorted(files)[1:]:
             try:
@@ -98,7 +135,7 @@ def main():
                 errors_found = True
                 print(f"\n  [FAIL] Incoerenza trovata in: {test_file.name}")
                 print(f"         (I dati non combaciano con la baseline: {ref_file.name})")
-                    
+
     if not errors_found:
         print("\n[OK] Tutti i file di configurazione raggruppati sono perfettamente identici!")
     else:

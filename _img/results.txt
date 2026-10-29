@@ -1,31 +1,99 @@
-**TRAINING RESULT MEAN**
-base ->                             Training Baseline
-randomization/X_XX ->               Training applicando la randomizzazione sulle inerzie (Scaling), X_XX corrisponde alla Varianza Gaussiana scelta come parametro: 0.01, 0.05, 0.1
+GRUPPO                                                       | DR    | INERTIA |    STD I | OBS     |  STD OBS |   QUAT OBS | STATES  |   STD ST |    QUAT ST | ACTIONS |  STD ACT 
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+base/nominal/run_20261021_144654                             | False | False   |      0.0 | False   |      0.0 |        0.0 | False   |      0.0 |        0.0 | False   |      0.0 
+base/noise/run_20261021_144654                               | True  | False   |      0.0 | True    |     0.01 |      0.001 | True    |     0.01 |      0.001 | True    |     0.01 
 
-**EVAL RESULT MEAN**
+noise/0_01/nominal/run_20261027_223259                       | False | False   |      0.0 | False   |      0.0 |        0.0 | False   |      0.0 |        0.0 | False   |      0.0 
+noise/0_01/noise/run_20261027_223259                         | True  | False   |      0.0 | True    |     0.01 |      0.001 | True    |     0.01 |      0.001 | True    |     0.01 
+
+randomization/0_01/nominal/run_20261021_184427               | False | True    |     0.01 | False   |      0.0 |        0.0 | False   |      0.0 |        0.0 | False   |      0.0 
+randomization/0_01/noise/run_20261021_184427                 | True  | False   |      0.0 | True    |     0.01 |      0.001 | True    |     0.01 |      0.001 | True    |     0.01 
+randomization/0_05/nominal/run_20261022_153750               | False | True    |     0.05 | False   |      0.0 |        0.0 | False   |      0.0 |        0.0 | False   |      0.0 
+randomization/0_05/noise/run_20261022_153750                 | True  | False   |      0.0 | True    |     0.01 |      0.001 | True    |     0.01 |      0.001 | True    |     0.01 
+randomization/0_1/nominal/run_20261027_091428                | False | True    |      0.1 | False   |      0.0 |        0.0 | False   |      0.0 |        0.0 | False   |      0.0 
+randomization/0_1/noise/run_20261027_091428                  | True  | False   |      0.0 | True    |     0.01 |      0.001 | True    |     0.01 |      0.001 | True    |     0.01 
+
+randomization_noise/N0_01__R0_01/nominal/run_20261028_000716 | False | False   |      0.0 | False   |      0.0 |        0.0 | False   |      0.0 |        0.0 | False   |      0.0 
+randomization_noise/N0_01__R0_01/noise/run_20261028_000716   | True  | False   |      0.0 | True    |     0.01 |      0.001 | True    |     0.01 |      0.001 | True    |     0.01 
+
+randomization_noise/N0_01__R0_05/nominal/run_20261028_014217 | False | False   |      0.0 | False   |      0.0 |        0.0 | False   |      0.0 |        0.0 | False   |      0.0 
+randomization_noise/N0_01__R0_05/noise/run_20261028_014217   | True  | False   |      0.0 | True    |     0.01 |      0.001 | True    |     0.01 |      0.001 | True    |     0.01 
+
+base_test_random/nominal/run_20261021_144654                 | False | False   |      0.0 | False   |      0.0 |        0.0 | False   |      0.0 |        0.0 | False   |      0.0 
+base_test_random/random/run_20261021_144654                  | True  | True    |     0.05 | False   |      0.0 |        0.0 | False   |      0.0 |        0.0 | False   |      0.0 
+
+randomization_test_random/0_01/nominal/run_20261021_184427   | False | True    |     0.01 | False   |      0.0 |        0.0 | False   |      0.0 |        0.0 | False   |      0.0 
+randomization_test_random/0_01/random/run_20261021_184427    | True  | True    |     0.01 | False   |      0.0 |        0.0 | False   |      0.0 |        0.0 | False   |      0.0 
+
+randomization_test_random/0_05/nominal/run_20261022_153750   | False | True    |     0.05 | False   |      0.0 |        0.0 | False   |      0.0 |        0.0 | False   |      0.0 
+randomization_test_random/0_05/random/run_20261022_153750    | True  | True    |     0.05 | False   |      0.0 |        0.0 | False   |      0.0 |        0.0 | False   |      0.0 
+
+randomization_test_random/0_1/nominal/run_20261027_091428    | False | True    |      0.1 | False   |      0.0 |        0.0 | False   |      0.0 |        0.0 | False   |      0.0 
+randomization_test_random/0_1/random/run_20261027_091428     | True  | True    |      0.1 | False   |      0.0 |        0.0 | False   |      0.0 |        0.0 | False   |      0.0 
+
+=================================================================================================================================================================================================================================
+
                                          |          q_diff_mean_deg           |                mean                |             delta_mean             |                goal                |              max_mean             
 RUN ID                                   | NOMINAL   | RANDOM-NOISE | DIFF%   | NOMINAL   | RANDOM-NOISE | DIFF%   | NOMINAL   | RANDOM-NOISE | DIFF%   | NOMINAL   | RANDOM-NOISE | DIFF%   | NOMINAL   | RANDOM-NOISE | DIFF%  
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-base                                     |      0.78 |       N/A |         -  |    135.44 |       N/A |         -  |      0.08 |       N/A |         -  |   4070.07 |       N/A |         -  |      0.56 |       N/A |         - 
-randomization/0_1                        |      6.18 |       N/A |         -  |   1648.99 |       N/A |         -  |    157.99 |       N/A |         -  |   3835.20 |       N/A |         -  |      7.01 |       N/A |         - 
-randomization/0_01                       |      0.97 |       N/A |         -  |    128.72 |       N/A |         -  |      0.73 |       N/A |         -  |   4056.72 |       N/A |         -  |      0.92 |       N/A |         - 
-randomization/0_05                       |      0.57 |       N/A |         -  |     55.90 |       N/A |         -  |      0.03 |       N/A |         -  |   4075.93 |       N/A |         -  |      0.32 |       N/A |         - 
+base                                     |      0.78 |      0.74 |     -5.1%  |    135.44 |    138.29 |     +2.1%  |      0.08 |     21.44 | +2.8e+04%  |   4070.07 |   4067.29 |     -0.1%  |      0.56 |      2.92 |   +423.2% 
+noise/0_01                               |      0.21 |      0.19 |    -10.3%  |     41.38 |     58.80 |    +42.1%  |    116.02 |    149.46 |    +28.8%  |   4086.40 |   4086.10 |     -0.0%  |      1.47 |      4.26 |   +189.0%
+randomization/0_01                       |      0.97 |      0.99 |     +1.7%  |    128.72 |    151.97 |    +18.1%  |      0.73 |     41.96 | +5.6e+03%  |   4056.72 |   4056.81 |     +0.0%  |      0.92 |      4.04 |   +338.2% 
+randomization/0_05                       |      0.57 |      0.57 |     +1.0%  |     55.90 |     78.09 |    +39.7%  |      0.03 |     49.24 | +1.5e+05%  |   4075.93 |   4075.86 |     -0.0%  |      0.32 |      3.52 |   +988.1% 
+randomization/0_1                        |      6.18 |      6.12 |     -1.0%  |   1648.99 |   1659.35 |     +0.6%  |    157.99 |    224.96 |    +42.4%  |   3835.20 |   3837.71 |     +0.1%  |      7.01 |     10.11 |    +44.2% 
+randomization_noise/N0_01__R0_01         |      1.71 |      1.66 |     -3.0%  |    392.57 |    389.80 |     -0.7%  |    756.06 |    759.97 |     +0.5%  |   4029.93 |   4022.11 |     -0.2%  |      5.31 |      7.22 |    +35.9% 
+randomization_noise/N0_01__R0_05         |      8.38 |      8.24 |     -1.7%  |   1183.26 |   1184.39 |     +0.1%  |     80.08 |     97.82 |    +22.1%  |   3819.29 |   3824.49 |     +0.1%  |      7.07 |      9.13 |    +29.2% 
+
+base_test_random                         |      0.78 |      0.85 |    +10.1%  |    135.44 |    141.54 |     +4.5%  |      0.08 |      0.07 |     -1.0%  |   4070.07 |   4066.92 |     -0.1%  |      0.56 |      0.60 |     +7.2% 
+randomization_test_random/0_01           |      0.97 |      0.93 |     -4.8%  |    128.72 |    122.12 |     -5.1%  |      0.73 |      0.73 |     -0.6%  |   4056.72 |   4058.74 |     +0.0%  |      0.92 |      0.89 |     -3.7% 
+randomization_test_random/0_1            |      6.18 |      6.51 |     +5.3%  |   1648.99 |   1706.50 |     +3.5%  |    157.99 |    159.90 |     +1.2%  |   3835.20 |   3819.03 |     -0.4%  |      7.01 |      7.27 |     +3.7% 
+randomization_test_random/0_05           |      0.57 |      0.71 |    +25.2%  |     55.90 |     77.65 |    +38.9%  |      0.03 |      0.35 |   +984.0%  |   4075.93 |   4070.09 |     -0.1%  |      0.32 |      0.46 |    +41.3% 
+
 =================================================================================================================================================================================================================================
 
 **EVALUTATION RESULT MEAN AND MEDIAN**
 In queste evaluation, fatte rispettivamente con il caso "base" e "randomization" della fase di training, vogliamo vedere come il modello risponde nel caso NOMINALE, nessuna randomizzazione sulle inerzie o rumore sugli stati/attuazioni in fase di evaluation
 RUN ID                                   |            q_diff_mean_            |                mean                |             delta_mean             |                goal                |              max_mean             
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-base                                     |      0.78                          |    135.44                          |      0.08                          |   4070.07                          |      0.56                         
-randomization/0_1                        |      6.18                          |   1648.99                          |    157.99                          |   3835.20                          |      7.01                         
-randomization/0_01                       |      0.97                          |    128.72                          |      0.73                          |   4056.72                          |      0.92                         
-randomization/0_05                       |      0.57                          |     55.90                          |      0.03                          |   4075.93                          |      0.32                         
+base                                     |                               0.78 |                             135.44 |                               0.08 |                            4070.07 |                              0.56 
+randomization/0_01                       |                               0.97 |                             128.72 |                               0.73 |                            4056.72 |                              0.92 
+randomization/0_05                       |                               0.57 |                              55.90 |                               0.03 |                            4075.93 |                              0.32 
+randomization/0_1                        |                               6.18 |                            1648.99 |                             157.99 |                            3835.20 |                              7.01 
 =================================================================================================================================================================================================================================
 
 **EVALUTATION RESULT INERTIA UNCERTAINTIES MEAN AND MEDIAN**
 In queste evaluation, fatte rispettivamente con il caso "base" e "randomization" della fase di training, vogliamo vedere come il modello risponde nei casi in cui le inerzie del satellite non sono quelle note ma presentano una certa varianza: 0.05
 RUN ID                                   |            q_diff_mean_            |                mean                |             delta_mean             |                goal                |              max_mean             
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-base_test_randomization/0_05             |                               5.41 |                            1062.72 |                               5.29 |                            3690.49 |                              6.02 
-randomization/0_05                       |                               0.48 |                              35.33 |                               1.38 |                            4079.51 |                              0.25
+base_test_random                         |                               0.85 |                             141.54 |                               0.07 |                            4066.92 |                              0.60 
+randomization_test_random/0_01           |                               0.93 |                             122.12 |                               0.73 |                            4058.74 |                              0.89 
+randomization_test_random/0_05           |                               0.71 |                              77.65 |                               0.35 |                            4070.09 |                              0.46 
+randomization_test_random/0_1            |                               6.51 |                            1706.50 |                             159.90 |                            3819.03 |                              7.27 
+=================================================================================================================================================================================================================================
+
+**EVALUTATION RESULT NOMINAL vs INERTIA UNCERTAINTIES MEAN AND MEDIAN**
+In queste evaluation vogliamo confrontare, all’interno di ciascun esperimento, i risultati dello stesso modello addestrato nel caso NOMINALE e nel caso con inerzie randomizzate. L’obiettivo è valutare come l’incertezza sulle inerzie introdotta in fase di evaluation modifica le prestazioni rispetto al relativo caso nominale.
+                                         |          q_diff_mean_deg           |                mean                |             delta_mean             |                goal                |              max_mean             
+RUN ID                                   | NOMINAL   |  RANDOM   |    DIFF%   | NOMINAL   |  RANDOM   |    DIFF%   | NOMINAL   |  RANDOM   |    DIFF%   | NOMINAL   |  RANDOM   |    DIFF%   | NOMINAL   |  RANDOM   |    DIFF%   
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+base_test_random                         |      0.78 |      0.85 |    +10.1%  |    135.44 |    141.54 |     +4.5%  |      0.08 |      0.07 |     -1.0%  |   4070.07 |   4066.92 |     -0.1%  |      0.56 |      0.60 |     +7.2% 
+randomization_test_random/0_01           |      0.97 |      0.93 |     -4.8%  |    128.72 |    122.12 |     -5.1%  |      0.73 |      0.73 |     -0.6%  |   4056.72 |   4058.74 |     +0.0%  |      0.92 |      0.89 |     -3.7% 
+randomization_test_random/0_1            |      6.18 |      6.51 |     +5.3%  |   1648.99 |   1706.50 |     +3.5%  |    157.99 |    159.90 |     +1.2%  |   3835.20 |   3819.03 |     -0.4%  |      7.01 |      7.27 |     +3.7% 
+randomization_test_random/0_05           |      0.57 |      0.71 |    +25.2%  |     55.90 |     77.65 |    +38.9%  |      0.03 |      0.35 |   +984.0%  |   4075.93 |   4070.09 |     -0.1%  |      0.32 |      0.46 |    +41.3% 
+=================================================================================================================================================================================================================================
+
+**EVALUTATION RESULT MEAN AND MEDIAN**
+In queste evaluation, fatte rispettivamente con il caso "base" e "noise" e "randomization_noise" della fase di training, vogliamo vedere come il modello risponde nei casi in cui le osservazioni e le attuazioni presentano una certa varianza:
+ - 0.01 sui parametri 3D (Scaling)
+ - 0.001 sui parametri quaternioni (Static)
+                                         |            q_diff_mean_            |                mean                |             delta_mean             |                goal                |              max_mean             
+RUN ID                                   | NOMINAL   |   NOISE   | DIFF%      | NOMINAL   |   NOISE   | DIFF%      | NOMINAL   |   NOISE   | DIFF%      | NOMINAL   |   NOISE   | DIFF%      | NOMINAL   |   NOISE   | DIFF%      
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+base                                     |      0.78 |      0.74 |     -5.1%  |    135.44 |    138.29 |     +2.1%  |      0.08 |     21.44 | +2.8e+04%  |   4070.07 |   4067.29 |     -0.1%  |      0.56 |      2.92 |   +423.2% 
+noise/0_01                               |      0.21 |      0.19 |    -10.3%  |     41.38 |     58.80 |    +42.1%  |    116.02 |    149.46 |    +28.8%  |   4086.40 |   4086.10 |     -0.0%  |      1.47 |      4.26 |   +189.0%
+randomization/0_01                       |      0.97 |      0.99 |     +1.7%  |    128.72 |    151.97 |    +18.1%  |      0.73 |     41.96 | +5.6e+03%  |   4056.72 |   4056.81 |     +0.0%  |      0.92 |      4.04 |   +338.2% 
+randomization/0_05                       |      0.57 |      0.57 |     +1.0%  |     55.90 |     78.09 |    +39.7%  |      0.03 |     49.24 | +1.5e+05%  |   4075.93 |   4075.86 |     -0.0%  |      0.32 |      3.52 |   +988.1% 
+randomization/0_1                        |      6.18 |      6.12 |     -1.0%  |   1648.99 |   1659.35 |     +0.6%  |    157.99 |    224.96 |    +42.4%  |   3835.20 |   3837.71 |     +0.1%  |      7.01 |     10.11 |    +44.2% 
+randomization_noise/N0_01__R0_01         |      1.71 |      1.66 |     -3.0%  |    392.57 |    389.80 |     -0.7%  |    756.06 |    759.97 |     +0.5%  |   4029.93 |   4022.11 |     -0.2%  |      5.31 |      7.22 |    +35.9% 
+randomization_noise/N0_01__R0_05         |      8.38 |      8.24 |     -1.7%  |   1183.26 |   1184.39 |     +0.1%  |     80.08 |     97.82 |    +22.1%  |   3819.29 |   3824.49 |     +0.1%  |      7.07 |      9.13 |    +29.2% 
 =================================================================================================================================================================================================================================
