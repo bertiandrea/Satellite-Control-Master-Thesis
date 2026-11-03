@@ -10,11 +10,11 @@ CONFIG_NAME=""
 
 usage() {
     echo "Usage:"
-    echo "  $0 --run-name checkpoint.pt --config-name config.json"
-    echo "  $0 --run-name checkpoint.pt --config-name config.json --seed 420"
-    echo "  $0 --run-name checkpoint.pt --config-name config.json --env rlgpu"
-    echo "  $0 --run-name checkpoint.pt --config-name config.json --display 11"
-    echo "  $0 --run-name checkpoint.pt --config-name config.json --seed 420 --env rlgpu --display 11"
+    echo "  $0 --run-name run_name --config-name config.json"
+    echo "  $0 --run-name run_name --config-name config.json --seed 420"
+    echo "  $0 --run-name run_name --config-name config.json --env rlgpu"
+    echo "  $0 --run-name run_name --config-name config.json --display 11"
+    echo "  $0 --run-name run_name --config-name config.json --seed 420 --env rlgpu --display 11"
 }
 
 while [ $# -gt 0 ]; do
