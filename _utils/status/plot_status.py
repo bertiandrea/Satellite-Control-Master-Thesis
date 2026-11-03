@@ -15,12 +15,17 @@ def nat_key(s):
 TAGS = ["Angular Error/q_diff_mean_deg", "Energy/mean",
         "Energy/delta_mean", "Goal/goal", "Torque/max_mean"]
 
+#EVALUATION TAGS
 LOG_DISPLAY = {
     "Angular Error/q_diff_mean_deg": 1e0,
     "Energy/mean": 1e1,
     "Energy/delta_mean": 1e0,
     "Torque/max_mean": 1e-1,
 }
+#TRAINING TAGS
+#LOG_DISPLAY = {
+#    "Energy/delta_mean": 1e3,
+#}
 
 def normalize_eval_name(name):
     if name == "nominal": return "nominal"
